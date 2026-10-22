@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>UAE Forward Placement Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one quiet column of four tools separated by hairlines; numbers in mono, everything else in one sans. */
+:root {
+  --bg: #fbfcfc;
+  --ink: #16212a;
+  --muted: #66737e;
+  --line: #e1e6ea;
+  --soft: #eef2f5;
+  --engine: #2a78d6;
+  --popular: #eb6834;
+  --kit: #a7741a;
+  --good: #1e7a4a;
+  --hold: #a7741a;
+  --stop: #b03a2e;
+  --font-body: "Source Sans 3", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10171d; --ink: #e6edf2; --muted: #98a6b2; --line: #26323c; --soft: #1a252e;
+    --engine: #4b93ea; --popular: #e36a3a; --kit: #d9a441; --good: #4cb07c; --hold: #d9a441; --stop: #e0705f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10171d; --ink: #e6edf2; --muted: #98a6b2; --line: #26323c; --soft: #1a252e;
+  --engine: #4b93ea; --popular: #e36a3a; --kit: #d9a441; --good: #4cb07c; --hold: #d9a441; --stop: #e0705f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 48px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-size: clamp(28px, 4.5vw, 38px); font-weight: 700; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+h2 { font-size: 20px; font-weight: 600; margin: 0; }
+p { margin: 0; }
+.sub { color: var(--muted); }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; font-weight: 500; }
+header { display: grid; gap: 20px; }
+.facts { display: flex; flex-wrap: wrap; gap: 12px 40px; }
+.fact { display: grid; }
+.fact b { font-family: var(--font-data); font-weight: 500; font-size: 24px; }
+.fact span { color: var(--muted); font-size: 14px; }
+section { display: grid; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; min-width: 0; }
+.two { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+svg { display: block; width: 100%; height: auto; max-width: 100%; }
+svg text { font-family: var(--font-data); fill: var(--muted); font-size: 11px; }
+.grid line { stroke: var(--line); }
+.stack { display: grid; gap: 12px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.row span:first-child { color: var(--muted); }
+.big { font-family: var(--font-data); font-size: 28px; font-weight: 500; line-height: 1; }
+.key { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.caption { color: var(--muted); font-size: 13px; }
+label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+input[type="number"], input[type="text"], select {
+  font-family: var(--font-data); font-size: 15px; color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; width: 100%; min-width: 0;
+}
+input[type="range"] { width: 100%; accent-color: var(--engine); }
+:focus-visible { outline: 2px solid var(--engine); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--soft); border: 1px solid transparent;
+  border-radius: 999px; padding: 4px 12px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { border-color: var(--engine); color: var(--engine); background: transparent; }
+.form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.form .span { grid-column: 1 / -1; }
+details { grid-column: 1 / -1; }
+summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+details .form { margin-top: 12px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); }
+.verdict { display: grid; gap: 10px; padding-left: 16px; border-left: 4px solid var(--good); }
+.verdict[data-state="hold"] { border-left-color: var(--hold); }
+.verdict[data-state="central"] { border-left-color: var(--stop); }
+.verdict .state { font-size: 24px; font-weight: 700; color: var(--good); }
+.verdict[data-state="hold"] .state { color: var(--hold); }
+.verdict[data-state="central"] .state { color: var(--stop); }
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.metrics div { display: grid; }
+.metrics span { color: var(--muted); font-size: 13px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.city { cursor: pointer; }
+.city:focus { outline: none; }
+.city:focus-visible circle, .city:focus-visible rect { stroke-width: 4; }
+.detail { display: grid; gap: 6px; }
+.detail h3 { font-size: 20px; margin: 0; }
+.detail .tier { color: var(--muted); font-size: 14px; }
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 52px; gap: 10px; align-items: center; font-size: 14px; }
+.bar .track { background: var(--soft); border-radius: 3px; height: 10px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--engine); }
+.bar.local .fill { background: var(--popular); }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+footer a { color: var(--engine); }
+@media (prefers-reduced-motion: no-preference) { .bar .fill { transition: width 200ms ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>UAE Forward Placement Simulator</h1>
+    <div class="facts" aria-label="Headline results">
+      <div class="fact"><b>+44%</b><span>demand served from the same space</span></div>
+      <div class="fact"><b>65% → 81%</b><span>coverage in the same space</span></div>
+      <div class="fact"><b>55%</b><span>of demand from new products</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="cov-title">
+    <h2 id="cov-title">Coverage</h2>
+    <div class="two">
+      <div class="stack">
+        <svg id="covChart" viewBox="0 0 640 290" role="img" aria-label="Share of next-year units served by forward space, two ranking rules"></svg>
+        <div class="legend">
+          <span><span class="key" style="background: var(--engine)"></span>Rank by cubic foot</span>
+          <span><span class="key" style="background: var(--popular)"></span>Rank by popularity</span>
+        </div>
+      </div>
+      <div class="stack">
+        <label for="space">Forward space <span class="num" id="spaceOut" style="color: var(--ink)">10%</span></label>
+        <input type="range" id="space" min="1" max="50" step="1" value="10">
+        <div class="row"><span>By cubic foot</span><span class="big" id="cuftOut" style="color: var(--engine)"></span></div>
+        <div class="row"><span>By popularity</span><span class="big" id="popOut" style="color: var(--popular)"></span></div>
+        <div class="row"><span>Gain</span><span class="num" id="gainOut"></span></div>
+        <p class="caption">Olist, 110,197 real units. Ranked on 2017, scored on 2018.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="dec-title">
+    <h2 id="dec-title">Placement check</h2>
+    <div class="chips" role="group" aria-label="Example products" id="presets"></div>
+    <div class="two">
+      <form class="form" id="form" novalidate>
+        <label class="span">Product<input type="text" id="name"></label>
+        <label>Units per week<input type="number" id="weekly" min="0" step="0.01"></label>
+        <label>Price (AED)<input type="number" id="price" min="0" step="1"></label>
+        <span></span>
+        <label>Length (cm)<input type="number" id="len" min="1" step="1"></label>
+        <label>Width (cm)<input type="number" id="wid" min="1" step="1"></label>
+        <label>Height (cm)<input type="number" id="hei" min="1" step="1"></label>
+        <details>
+          <summary>Site settings</summary>
+          <div class="form">
+            <label>Cutoff score<input type="number" id="cutoff" min="0" step="0.05" value="0.5"></label>
+            <label>Stability band<select id="band"><option value="0.05">5%</option><option value="0.1" selected>10%</option><option value="0.2">20%</option></select></label>
+            <label>Weeks of stock<select id="cover"><option value="1">1</option><option value="2" selected>2</option><option value="4">4</option></select></label>
+            <label>Holding cost / year<select id="rate"><option value="0.15">15%</option><option value="0.2" selected>20%</option><option value="0.25">25%</option></select></label>
+            <label class="check span"><input type="checkbox" id="isNew"> New product (lookalike estimate)</label>
+          </div>
+        </details>
+      </form>
+      <div class="verdict" id="verdict" data-state="forward" aria-live="polite">
+        <span class="state" id="vState"></span>
+        <p id="vWhy"></p>
+        <div class="metrics">
+          <div><span>Score</span><b class="num" id="mScore"></b></div>
+          <div><span>Holding cost / sale</span><b class="num" id="mHold"></b></div>
+          <div><span>Stock</span><b class="num" id="mStock"></b></div>
+          <div><span>Space</span><b class="num" id="mSpace"></b></div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">Example products and cutoff are illustrative.</p>
+  </section>
+
+  <section aria-labelledby="net-title">
+    <h2 id="net-title">UAE rollout</h2>
+    <div class="two">
+      <div class="stack">
+        <svg id="map" viewBox="0 0 640 420" role="group" aria-label="UAE cities and their proposed service tier"></svg>
+        <div class="legend" id="mapLegend"></div>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="pool-title">
+    <h2 id="pool-title">National vs local ranking</h2>
+    <label style="max-width: 260px">Region<select id="region"></select></label>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <footer>
+    Built by Aamilah Ismail on public data.
+    <a href="https://www.kaggle.com/code/aamilahismail/transcend-2026-forward-placement-analysis-olist" target="_blank" rel="noopener">Analysis</a>,
+    <a href="https://www.kaggle.com/code/aamilahismail/transcend-2026-forecast-launch-basket-tests" target="_blank" rel="noopener">tests</a>.
+  </footer>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
+};
+const fmt = (x, d = 1) => x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+// ---------- Coverage (measured Olist results) ----------
+const SPACE = [1, 2, 5, 10, 20, 30, 50];
+const CUFT = [13.5, 17.8, 25.5, 31.4, 36.8, 39.8, 42.6];
+const POP = [5.0, 7.1, 15.5, 21.8, 28.6, 32.5, 37.4];
+// Values between measured points are linear interpolations
+const interp = (x, xs, ys) => {
+  if (x <= xs[0]) return ys[0];
+  for (let i = 1; i < xs.length; i++) {
+    if (x <= xs[i]) return ys[i - 1] + (ys[i] - ys[i - 1]) * (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
+  }
+  return ys[ys.length - 1];
+};
+const cov = document.getElementById('covChart');
+const X = (v) => 44 + (v / 52) * 580;
+const Y = (v) => 258 - (v / 50) * 240;
+function drawCoverage(s) {
+  cov.textContent = '';
+  const g = el('g', { class: 'grid' }, cov);
+  for (let v = 0; v <= 50; v += 10) {
+    el('line', { x1: X(0), x2: X(52), y1: Y(v), y2: Y(v) }, g);
+    el('text', { x: X(0) - 8, y: Y(v) + 4, 'text-anchor': 'end' }, cov).textContent = v + '%';
+    el('text', { x: X(v), y: 280, 'text-anchor': 'middle' }, cov).textContent = v + '%';
+  }
+  const line = (ys, color) => el('polyline', { points: SPACE.map((x, i) => `${X(x)},${Y(ys[i])}`).join(' '), fill: 'none', stroke: color, 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, cov);
+  line(POP, 'var(--popular)');
+  line(CUFT, 'var(--engine)');
+  el('line', { x1: X(s), x2: X(s), y1: Y(0), y2: Y(50), stroke: 'var(--muted)', 'stroke-width': 1, 'stroke-dasharray': '3 3' }, cov);
+  const c = interp(s, SPACE, CUFT), p = interp(s, SPACE, POP);
+  el('circle', { cx: X(s), cy: Y(c), r: 6, fill: 'var(--engine)', stroke: 'var(--bg)', 'stroke-width': 2 }, cov);
+  el('circle', { cx: X(s), cy: Y(p), r: 6, fill: 'var(--popular)', stroke: 'var(--bg)', 'stroke-width': 2 }, cov);
+  document.getElementById('spaceOut').textContent = s + '%';
+  document.getElementById('cuftOut').textContent = fmt(c) + '%';
+  document.getElementById('popOut').textContent = fmt(p) + '%';
+  document.getElementById('gainOut').textContent = '+' + fmt(c - p) + ' pts';
+}
+const slider = document.getElementById('space');
+slider.addEventListener('input', () => drawCoverage(+slider.value));
+drawCoverage(10);
+
+// ---------- Placement check ----------
+const PRESETS = [
+  { name: 'Phone charger', weekly: 120, price: 49, len: 12, wid: 8, hei: 4 },
+  { name: 'Water, 24-pack', weekly: 300, price: 22, len: 40, wid: 27, hei: 22 },
+  { name: 'Air fryer', weekly: 25, price: 349, len: 38, wid: 34, hei: 36 },
+  { name: '55-inch TV', weekly: 6, price: 1899, len: 135, wid: 85, hei: 15 },
+  { name: 'HDMI adapter', weekly: 0.03, price: 89, len: 10, wid: 6, hei: 3 },
+];
+const f = Object.fromEntries(['name', 'weekly', 'price', 'len', 'wid', 'hei', 'cutoff', 'cover', 'band', 'rate', 'isNew']
+  .map((i) => [i, document.getElementById(i)]));
+const presetBox = document.getElementById('presets');
+PRESETS.forEach((p, i) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'chip'; b.textContent = p.name; b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', () => { load(p); setPressed(i); });
+  presetBox.appendChild(b);
+});
+const setPressed = (i) => [...presetBox.children].forEach((b, j) => b.setAttribute('aria-pressed', String(i === j)));
+function load(p) {
+  f.name.value = p.name; f.weekly.value = p.weekly; f.price.value = p.price;
+  f.len.value = p.len; f.wid.value = p.wid; f.hei.value = p.hei; decide();
+}
+function decide() {
+  const weekly = Math.max(0, +f.weekly.value || 0);
+  const price = Math.max(0, +f.price.value || 0);
+  const vol = Math.max(1, +f.len.value || 0) * Math.max(1, +f.wid.value || 0) * Math.max(1, +f.hei.value || 0) / 28316.8;
+  const cover = +f.cover.value, band = +f.band.value, rate = +f.rate.value, cutoff = Math.max(0, +f.cutoff.value || 0);
+  const annual = weekly * 52;
+  // Forward stock covers the chosen weeks of demand, never less than one unit
+  const stock = Math.max(1, Math.ceil(weekly * cover));
+  const space = stock * vol;
+  const score = weekly / space;
+  const hold = annual > 0 ? rate * stock / annual : Infinity;
+  let state, why;
+  if (annual <= 2) {
+    state = 'central'; why = `Sells about ${fmt(annual, 1)} a year. Holding it forward costs ${isFinite(hold) ? fmt(hold * 100, 0) + '%' : 'more than its price'} per sale.`;
+  } else if (score >= cutoff * (1 + band)) {
+    state = 'forward'; why = `Score ${fmt(score, 2)} clears the cutoff of ${fmt(cutoff, 2)} by more than the ${Math.round(band * 100)}% band.`;
+  } else if (score >= cutoff) {
+    state = 'hold'; why = `Above the cutoff, but not by enough to pay for the move.`;
+  } else {
+    state = 'central'; why = `Score ${fmt(score, 2)} is below the site cutoff of ${fmt(cutoff, 2)}.`;
+  }
+  if (f.isNew.checked) why += ' Estimate replaced by real sales from week two.';
+  document.getElementById('verdict').dataset.state = state;
+  document.getElementById('vState').textContent = state === 'forward' ? 'Place forward' : state === 'hold' ? 'Hold' : 'Keep central';
+  document.getElementById('vWhy').textContent = why;
+  document.getElementById('mScore').textContent = fmt(score, 2);
+  document.getElementById('mStock').textContent = stock.toLocaleString('en-US') + ' units';
+  document.getElementById('mSpace').textContent = fmt(space, 2) + ' cu ft';
+  document.getElementById('mHold').textContent = isFinite(hold) ? fmt(hold * 100, 1) + '%' + (price ? ` (AED ${fmt(hold * price, 2)})` : '') : 'n/a';
+}
+document.getElementById('form').addEventListener('input', () => { setPressed(-1); decide(); });
+document.getElementById('form').addEventListener('submit', (e) => e.preventDefault());
+load(PRESETS[0]); setPressed(0);
+
+// ---------- UAE rollout map ----------
+const TIERS = {
+  pilot: { label: 'Pilot forward site', color: 'var(--engine)', fill: true },
+  forward: { label: 'Forward site, next', color: 'var(--engine)', fill: false },
+  sameday: { label: 'Same-day nearby', color: 'var(--good)', fill: false },
+  nextday: { label: 'Next-day + essentials kit', color: 'var(--kit)', fill: false },
+  fc: { label: 'Fulfilment centre', color: 'var(--ink)', fill: true, square: true },
+};
+const CITIES = [
+  { name: 'Abu Dhabi', lat: 24.45, lon: 54.38, tier: 'pilot', r: 9, info: ['4.1M residents (emirate)', '42 competitor dark stores', 'Weeks 5–16'] },
+  { name: 'Dubai', lat: 25.2, lon: 55.27, tier: 'forward', r: 9, info: ['4.0M residents', '99 competitor dark stores'] },
+  { name: 'Sharjah', lat: 25.35, lon: 55.42, tier: 'forward', r: 7, info: ['1.8M residents'] },
+  { name: 'Ajman', lat: 25.41, lon: 55.5, tier: 'sameday', r: 5, info: ['From the Sharjah or Dubai site'] },
+  { name: 'Umm Al Quwain', lat: 25.56, lon: 55.6, tier: 'nextday', r: 4, info: ['Same-day once demand clears the threshold'] },
+  { name: 'Ras Al Khaimah', lat: 25.79, lon: 55.94, tier: 'nextday', r: 5, info: ['Ranked on the UAE-wide pattern'] },
+  { name: 'Fujairah', lat: 25.13, lon: 56.33, tier: 'nextday', r: 5, info: ['Evening line-haul from central'] },
+  { name: 'Al Ain', lat: 24.21, lon: 55.74, tier: 'nextday', r: 6, info: ['Ranked on the UAE-wide pattern'] },
+  { name: 'Ruwais', lat: 24.11, lon: 52.73, tier: 'nextday', r: 4, info: ['Al Dhafra region'] },
+  { name: 'Dubai South', lat: 24.9, lon: 55.16, tier: 'fc', r: 6, info: ['2.1M cu ft of storage'] },
+];
+const LABEL = {
+  'Dubai': [-14, 6, 'end'], 'Sharjah': [-12, -8, 'end'], 'Ajman': [10, 14, 'start'], 'Umm Al Quwain': [9, -4, 'start'],
+  'Ras Al Khaimah': [-10, 4, 'end'], 'Fujairah': [10, 4, 'start'], 'Dubai South': [-11, 4, 'end'],
+};
+const map = document.getElementById('map');
+const K = 145, COS = Math.cos(24.5 * Math.PI / 180);
+const MX = (lon) => 60 + (lon - 52.5) * COS * K;
+const MY = (lat) => 20 + (26.2 - lat) * K;
+const gg = el('g', { class: 'grid' }, map);
+for (let lon = 53; lon <= 56; lon++) {
+  el('line', { x1: MX(lon), x2: MX(lon), y1: MY(26.2), y2: MY(23.6) }, gg);
+  el('text', { x: MX(lon), y: 414, 'text-anchor': 'middle' }, map).textContent = lon + '°E';
+}
+for (let lat = 24; lat <= 26; lat++) {
+  el('line', { x1: MX(52.5), x2: MX(56.5), y1: MY(lat), y2: MY(lat) }, gg);
+  el('text', { x: MX(52.5) - 8, y: MY(lat) + 4, 'text-anchor': 'end' }, map).textContent = lat + '°N';
+}
+const detail = document.getElementById('detail');
+let selected = null;
+function showCity(c, node) {
+  if (selected) selected.setAttribute('aria-pressed', 'false');
+  selected = node; node.setAttribute('aria-pressed', 'true');
+  detail.textContent = '';
+  const h = document.createElement('h3'); h.textContent = c.name; detail.appendChild(h);
+  const t = document.createElement('span'); t.className = 'tier'; t.textContent = TIERS[c.tier].label; detail.appendChild(t);
+  c.info.forEach((line) => { const p = document.createElement('p'); p.textContent = line; detail.appendChild(p); });
+}
+CITIES.forEach((c) => {
+  const t = TIERS[c.tier];
+  const g = el('g', { class: 'city', tabindex: '0', role: 'button', 'aria-label': `${c.name}: ${t.label}`, 'aria-pressed': 'false' }, map);
+  const x = MX(c.lon), y = MY(c.lat);
+  el('circle', { cx: x, cy: y, r: 16, fill: 'transparent' }, g);
+  if (t.square) el('rect', { x: x - c.r, y: y - c.r, width: c.r * 2, height: c.r * 2, rx: 2, fill: t.color }, g);
+  else el('circle', { cx: x, cy: y, r: c.r, fill: t.fill ? t.color : 'var(--bg)', stroke: t.color, 'stroke-width': 3 }, g);
+  const [dx, dy, anchor] = LABEL[c.name] || [c.r + 6, 4, 'start'];
+  el('text', { x: x + dx, y: y + dy, 'text-anchor': anchor, style: 'fill: var(--ink); font-size: 12px' }, g).textContent = c.name;
+  g.addEventListener('click', () => showCity(c, g));
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showCity(c, g); } });
+  if (c.name === 'Abu Dhabi') showCity(c, g);
+});
+const legend = document.getElementById('mapLegend');
+Object.values(TIERS).forEach((t) => {
+  const s = document.createElement('span');
+  const k = document.createElement('span'); k.className = 'key';
+  k.style.background = t.fill ? t.color : 'transparent'; k.style.border = `2px solid ${t.color}`;
+  if (t.square) k.style.borderRadius = '2px';
+  s.append(k, document.createTextNode(t.label)); legend.appendChild(s);
+});
+
+// ---------- National vs local (measured Olist results) ----------
+const POOL = {
+  'SP, 42% of demand': [24.7, 24.7, 24.6, 24.1, 23.6],
+  'RJ, 13%': [22.6, 22.7, 22.5, 21.2, 19.6],
+  'MG, 12%': [22.0, 21.7, 21.1, 19.0, 17.0],
+  'RS, 6%': [17.0, 16.2, 14.8, 13.2, 12.4],
+  'PR, smaller': [18.7, 17.9, 16.0, 11.9, 11.0],
+  'SC, smaller': [15.1, 14.6, 12.5, 10.8, 9.5],
+};
+const WEIGHTS = ['National', 'Local 25%', 'Local 50%', 'Local 75%', 'Local only'];
+const region = document.getElementById('region');
+Object.keys(POOL).forEach((k) => { const o = document.createElement('option'); o.value = k; o.textContent = k; region.appendChild(o); });
+region.value = 'PR, smaller';
+function drawBars() {
+  const bars = document.getElementById('bars');
+  bars.textContent = '';
+  POOL[region.value].forEach((v, i) => {
+    const row = document.createElement('div'); row.className = 'bar' + (i === 4 ? ' local' : '');
+    const lab = document.createElement('span'); lab.textContent = WEIGHTS[i];
+    const tr = document.createElement('div'); tr.className = 'track';
+    const fi = document.createElement('div'); fi.className = 'fill'; fi.style.width = (v / 26 * 100) + '%';
+    tr.appendChild(fi);
+    const num = document.createElement('span'); num.className = 'num'; num.textContent = fmt(v) + '%';
+    row.append(lab, tr, num); bars.appendChild(row);
+  });
+}
+region.addEventListener('change', drawBars);
+drawBars();
+</script>
+
+</body>
+</html>
